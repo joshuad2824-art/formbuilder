@@ -1,0 +1,261 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Plain — Brand Kit v1 (unbranded)</title>
+
+<!--
+  The default brand kit. Loaded when nobody has dropped a brand file in.
+  Same format as any other kit: JSON token block, complete self-contained
+  document CSS, live specimen page.
+
+  This kit is deliberately colorless. It is the reference implementation of
+  the one rule that cannot be broken: no meaning is ever carried by color
+  alone. Here, no meaning is carried by color at all — the label is the
+  entire signal. Anything that reads correctly on this kit reads correctly
+  on every kit.
+-->
+
+<script type="application/json" id="brand-kit">
+{
+  "kit_version": "1.0",
+  "id": "unbranded-v1",
+  "name": "Plain",
+  "org": null,
+  "org_unit": null,
+  "source": "None. This kit is the app's own neutral default, not a brand.",
+
+  "color": {
+    "ink":        { "hex": "#1a1a1a", "role": "all type and all rules",
+                    "text_on": "white", "white_ok": "any", "contrast_white_on": 15.87 },
+    "ink_muted":  { "hex": "#4a4a4a", "role": "captions, secondary", "contrast_white_on": 8.94 },
+    "ink_quiet":  { "hex": "#767676", "role": "fine print, metadata labels", "contrast_white_on": 4.54 },
+    "rule":       { "hex": "#d8d8d8", "role": "table hairlines" },
+    "tint":       { "hex": "#f2f2f2", "role": "the only fill in the kit — 6% ink" },
+    "paper":      { "hex": "#ffffff" }
+  },
+
+  "type": {
+    "serif":     { "primary": null, "office": "Georgia", "web": "Georgia",
+                   "use": "headings only" },
+    "sans":      { "primary": null, "office": "Calibri", "web": "Calibri", "fallback": "Arial",
+                   "use": "body copy, callouts" },
+    "condensed": { "primary": null, "office": "Calibri", "web": "Calibri", "fallback": "Arial",
+                   "use": "captions, fine print, metadata" },
+
+    "body_family": "sans",
+    "body_size_pt": 11,
+    "heading_family": "serif",
+    "callout_label_family": "sans",
+    "callout_label_weight": 700,
+
+    "scale_ratio": { "field_guide": 1.2, "quick_reference": 1.25, "huddle_card": 1.25 },
+    "max_ratio_narrow": 1.333,
+    "min_size_pt": 7.5,
+    "body_min_pt": 11,
+    "table_cell_min_pt": 8,
+
+    "numerals": { "body": "oldstyle proportional", "tables": "tabular lining" },
+    "justify": false
+  },
+
+  "callouts": [
+    { "key": "note",         "label": "NOTE",         "color": "ink", "text": "white", "status": "approved",
+      "meaning": "icon decoding, shortcuts, alternate paths, system behavior — never a consequence" },
+    { "key": "important",    "label": "IMPORTANT",    "color": "ink", "text": "white", "status": "approved",
+      "meaning": "a blocker, trap, or consequence" },
+    { "key": "requirements", "label": "REQUIREMENTS", "color": "ink", "text": "white", "status": "approved",
+      "meaning": "regulatory or mandatory" },
+    { "key": "tip",          "label": "TIP",          "color": "ink", "text": "white", "status": "approved",
+      "meaning": "optional efficiency" }
+  ],
+
+  "annotation": {
+    "box_color": "ink",
+    "arrow_color": "ink",
+    "label_text": "white",
+    "min_contrast_vs_sampled_pixels": 3.0,
+    "max_callouts_per_image": 4
+  },
+
+  "monochrome": true,
+
+  "blueprints": ["field_guide", "quick_reference", "huddle_card"],
+  "sections_enabled": null,
+
+  "footer_template": "{org_unit}",
+  "system_version_default": null,
+
+  "assets": { "logo": null, "logo_reverse": null, "emblem": null, "wordmark": null, "arch": null,
+              "note": "A plain kit has no marks. Documents built on it carry only their own title." },
+
+  "font_note": "No licensed faces. Georgia and Calibri are named because they are present on the machines this prints from and need no external reference; Arial is the fallback. Nothing here is a brand decision."
+}
+</script>
+
+<style>
+/* ============================================================================
+   DOCUMENT CSS — identical geometry to every other kit. Geometry belongs to
+   the engine, not the brand; only color, type and marks change per kit.
+   ============================================================================ */
+
+:root {
+  --ink: #1a1a1a;
+  --ink-muted: #4a4a4a;
+  --ink-quiet: #767676;
+  --rule: #d8d8d8;
+  --tint: #f2f2f2;
+  --paper: #ffffff;
+
+  --font-heading: Georgia, "Times New Roman", serif;
+  --font-body: Calibri, Carlito, Arial, Helvetica, sans-serif;
+  --font-condensed: Calibri, Carlito, Arial, Helvetica, sans-serif;
+
+  --body-size: 11pt;
+  --table-size: 10pt;
+  --caption-size: 9pt;
+  --tracking-eyebrow: 1.25px;
+}
+
+.doc[data-blueprint="field_guide"]    { --unit: 16.5pt;  --half: 8.25pt;  --leading: 1.50; --size-title: 23pt;   --size-h1: 19pt;   --size-h2: 16pt;   --size-h3: 13pt; }
+.doc[data-blueprint="quick_reference"]{ --unit: 15.75pt; --half: 7.875pt; --leading: 1.43; --size-title: 27pt;   --size-h1: 21.5pt; --size-h2: 17pt;   --size-h3: 13.5pt; }
+.doc[data-blueprint="huddle_card"]    { --unit: 25.44pt; --half: 12.72pt; --leading: 1.59; --size-title: 31.25pt; --size-h1: 25pt;  --size-h2: 20pt;   --size-h3: 16pt; --body-size: 16pt; }
+
+@page field-guide-recto { size: 5.5in 8.5in; margin: 0.5in 0.5in 0.896in 0.625in; marks: crop; bleed: 0.125in; }
+@page field-guide-verso { size: 5.5in 8.5in; margin: 0.5in 0.625in 0.896in 0.5in; marks: crop; bleed: 0.125in; }
+@page quick-reference   { size: 8.5in 11in;  margin: 0.75in 0.75in 0.844in; }
+@page huddle-card       { size: 8.5in 11in;  margin: 0.75in 0.75in 0.71in; }
+
+.doc[data-blueprint="quick_reference"] .body-grid { display: grid; grid-template-columns: 3.0625in 3.0625in; column-gap: 0.875in; }
+.doc[data-blueprint="quick_reference"][data-variant="prose"] { --unit: 17.16pt; --half: 8.58pt; --leading: 1.56; }
+.doc[data-blueprint="quick_reference"][data-variant="prose"] .body-grid { grid-template-columns: 4.5in 2.25in; column-gap: 0.25in; }
+.doc[data-blueprint="quick_reference"][data-variant="prose"] .rail { border-left: 1px solid var(--rule); padding-left: 0.25in; font-size: 8.5pt; line-height: 1.4; }
+.doc[data-blueprint="huddle_card"] .spine { max-width: 5.25in; }
+
+.doc[data-large-print] { --body-size: 15.5pt; --table-size: 14pt; --caption-size: 13pt; --unit: 24.8pt; --leading: 1.60; }
+.doc[data-large-print] .body-grid { grid-template-columns: 1fr !important; }
+
+.doc {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--body-size);
+  line-height: var(--leading);
+  text-align: left;
+  font-variant-numeric: oldstyle-nums proportional-nums;
+  hyphens: none;
+}
+.doc h1, .doc h2, .doc h3 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  color: var(--ink);
+  text-wrap: balance;
+  break-after: avoid;
+}
+.doc h1 { font-size: var(--size-h1); line-height: 1.15; margin: calc(var(--unit) * 3) 0 var(--half); }
+.doc h2 { font-size: var(--size-h2); line-height: 1.25; margin: calc(var(--unit) * 2) 0 var(--half); }
+.doc h3 { font-size: var(--size-h3); line-height: 1.30; margin: calc(var(--unit) * 1.5) 0 var(--half); }
+.doc h1:first-child, .doc h2:first-child, .doc h3:first-child { margin-top: 0; }
+.doc p, .doc ul, .doc ol { margin: 0 0 var(--unit); orphans: 2; widows: 2; }
+
+.doc .eyebrow, .doc .meta, .doc .fineprint { font-family: var(--font-condensed); font-size: var(--caption-size); color: var(--ink-quiet); }
+.doc .eyebrow { text-transform: uppercase; letter-spacing: var(--tracking-eyebrow); }
+.doc .doc-title { font-family: var(--font-heading); font-weight: 700; font-size: var(--size-title); line-height: 1.05; }
+.doc .rule-brand { height: 2px; width: 132px; background: var(--ink); }
+
+.doc .ui { font-weight: 700; }
+.doc .literal { font-family: "Courier New", monospace; font-size: 0.94em; }
+.doc .sysmsg { font-style: italic; }
+
+.doc .steps { list-style: none; padding: 0; margin: 0; }
+.doc .steps > li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; margin-bottom: var(--unit); break-inside: avoid; }
+.doc .steps > li > .n { font-weight: 700; font-variant-numeric: tabular-nums lining-nums; }
+
+.doc table { width: 100%; border-collapse: collapse; font-size: var(--table-size); line-height: 1.4; table-layout: fixed; }
+.doc thead th {
+  font-family: var(--font-condensed); text-transform: uppercase; letter-spacing: var(--tracking-eyebrow);
+  font-size: var(--caption-size); color: var(--ink-quiet); font-weight: 700; text-align: left;
+  padding: 0 0.75em 0.35em 0; border-bottom: 0.5pt solid var(--ink);
+}
+.doc tbody td { vertical-align: top; padding: 0.35em 0.75em 0.35em 0; border-bottom: 1px solid var(--rule); }
+.doc tbody tr:last-child td { border-bottom: 0.5pt solid var(--ink); }
+.doc td:last-child, .doc th:last-child { padding-right: 0; padding-left: 0.75em; }
+.doc td.num, .doc th.num { text-align: right; font-variant-numeric: tabular-nums lining-nums; }
+.doc table[data-banded] tbody tr:nth-child(even) { background: var(--tint); }
+
+/* Callouts. One treatment for all four levels: a ruled box with the label
+   reversed out in an ink tab. The WORD is the entire signal. */
+.doc .callout {
+  border: 1.5pt solid var(--ink);
+  background: var(--paper);
+  padding: 0;
+  margin: var(--unit) 0;
+  break-inside: avoid;
+}
+.doc .callout > .label {
+  display: block;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-body);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-eyebrow);
+  font-size: var(--caption-size);
+  padding: 0.3em 1em;
+}
+.doc .callout > p { margin: 0; padding: 0.6em 1em; line-height: 1.35; }
+
+.doc figure { margin: var(--unit) 0; break-inside: avoid; }
+.doc figure img { display: block; width: 100%; height: auto; }
+.doc figcaption { font-family: var(--font-condensed); font-size: var(--caption-size); color: var(--ink-muted); margin-top: var(--half); line-height: 1.5; }
+.doc .anno-box { position: absolute; border: 2px solid var(--ink); }
+.doc .anno-label { position: absolute; background: var(--ink); color: var(--paper); font-weight: 700; font-size: 8pt; padding: 1px 5px; }
+
+.doc .support { border-top: 1px solid var(--rule); padding-top: var(--half); font-family: var(--font-condensed); font-size: var(--caption-size); color: var(--ink-muted); }
+.doc .source-footer { font-family: var(--font-condensed); font-size: var(--caption-size); color: var(--ink-quiet); }
+.doc[data-draft] .needs-verification { box-shadow: inset 3px 0 0 var(--ink-quiet); padding-left: 0.5em; }
+
+/* ---- specimen page ---- */
+.spec { font-family: var(--font-body); color: var(--ink); margin: 0; background: #f7f7f7; }
+.spec-wrap { max-width: 900px; margin: 0 auto; padding: 48px 32px 96px; }
+.spec h1 { font-family: var(--font-heading); font-size: 34px; margin: 0 0 8px; }
+.spec .lede { font-size: 15px; color: var(--ink-muted); max-width: 62ch; margin: 0 0 40px; line-height: 1.5; }
+.spec h2 { font-family: var(--font-condensed); text-transform: uppercase; letter-spacing: 1.25px; font-size: 12px; color: var(--ink-quiet); margin: 40px 0 14px; border-top: 1px solid #ddd; padding-top: 14px; }
+.callout-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.type-row { display: flex; align-items: baseline; gap: 16px; border-bottom: 1px solid #ddd; padding: 10px 0; }
+.type-row .tag { font-family: var(--font-condensed); font-size: 11px; color: var(--ink-quiet); width: 150px; flex: none; text-transform: uppercase; letter-spacing: 1px; }
+.note { border: 1px solid var(--ink); background: #fff; padding: 16px 18px; font-size: 13.5px; line-height: 1.6; margin-top: 16px; }
+@media print { .spec { display: none; } }
+</style>
+
+<body class="spec">
+<div class="spec-wrap">
+
+  <h1>Plain — Brand Kit v1</h1>
+  <p class="lede">The kit that loads when nobody has dropped a brand file in. Same geometry as every other kit, no marks, and no color anywhere.</p>
+
+  <h2>Callouts — the label is the whole signal</h2>
+  <div class="doc callout-row" data-blueprint="quick_reference">
+    <div class="callout" style="margin:0"><span class="label">Note</span><p>A name ending in <b>(Phase)</b> attaches to a plan already ordered.</p></div>
+    <div class="callout" style="margin:0"><span class="label">Important</span><p>A plan signed on the wrong encounter cannot be moved. Void and re-order.</p></div>
+    <div class="callout" style="margin:0"><span class="label">Requirements</span><p>Schedule II plans are signed with two-factor authentication.</p></div>
+    <div class="callout" style="margin:0"><span class="label">Tip</span><p>Favorite a plan once and it rises to the top of every later search.</p></div>
+  </div>
+
+  <div class="note">
+    <b>Why all four look the same.</b> The rule the renderer enforces everywhere is that no meaning may be carried by color alone — up to about 8% of male readers have a color vision deficiency, and a photocopier has one hundred percent of the time. This kit takes that to its end: the four levels differ only in the word. Any document that still reads correctly here reads correctly on every kit, which makes this the right kit to draft on and the right one to test against.
+  </div>
+
+  <h2>Type — 11 pt base</h2>
+  <div class="type-row"><span class="tag">Title · 27 pt</span><span style="font-family:Georgia,serif;font-weight:700;font-size:27pt">Ordering PowerPlans</span></div>
+  <div class="type-row"><span class="tag">H1 · 21.5 pt</span><span style="font-family:Georgia,serif;font-weight:700;font-size:21.5pt">Adding to an existing phase</span></div>
+  <div class="type-row"><span class="tag">H2 · 17 pt</span><span style="font-family:Georgia,serif;font-weight:700;font-size:17pt">Before you start</span></div>
+  <div class="type-row"><span class="tag">Body · 11 pt</span><span style="font-size:11pt">Select the <b>Orders</b> or <b>Medication List</b> tab from the Menu.</span></div>
+  <div class="type-row"><span class="tag">Table cell · 10 pt</span><span style="font-size:10pt">Scroll to and tap <b>Safari</b> (or the default browser).</span></div>
+  <div class="type-row"><span class="tag">Caption · 9 pt</span><span style="font-size:9pt;color:#4a4a4a">The Add Order window with the phase header selected.</span></div>
+
+  <h2>What this kit does not have</h2>
+  <div class="note" style="border-style:dashed">
+    No logo, no wordmark, no color field, no arch, no organization name. A document built on this kit carries its own title and nothing else. Drop a brand file in at any point and the same content re-renders with that brand — the content is data, so nothing is retyped.
+  </div>
+
+</div>
+</body>
