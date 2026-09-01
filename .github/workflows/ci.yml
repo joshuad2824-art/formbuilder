@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Tests
+        run: npm test
+
+      # The geometry table is generated from the engine, never typed. Running
+      # the verifier here is what gives that discipline teeth: it exits non-zero
+      # if any geometry stops satisfying its own checks — live height an exact
+      # multiple of its own unit, measure inside its band, columns filling the
+      # live width.
+      - name: Geometry
+        run: npm run geometry
+
+      - name: Build
+        run: npm run build
