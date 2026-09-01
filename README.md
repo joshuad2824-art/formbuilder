@@ -21,20 +21,22 @@ anything on top of it.* Steps 1–3 are done.
 |---|---|---|
 | 1 | Content model and section types | done |
 | 2 | Brand kit format, both kits, the validator | done |
-| 3 | HTML renderer at all geometries | done — four geometries render, 80 tests |
-| 4 | Screenshot pipeline | contract in place, pipeline not built |
-| 5 | PDF export | prints from the HTML; no preflight yet |
-| 6 | The form UI | not started |
-| 7 | Rules engine — HARD first, then WARNING | HARD contrast and keep-together enforced in the renderer |
+| 3 | HTML renderer at all geometries | done — four geometries render |
+| 4 | Screenshot pipeline | done — PHI, crop, annotate, alt text |
+| 5 | PDF export | prints from the HTML; press-side PDF/X not claimed |
+| 6 | The form UI | six screens, end to end |
+| 7 | Rules engine — HARD first, then WARNING | done |
 | 8 | DOCX emitter | not started |
-| 9 | Huddle card, large print, retrieval blocks | card and large print done |
+| 9 | Huddle card, large print, retrieval blocks | card and large print done; retrieval blocks not started |
 
 ```
 npm install
-npm test          # 80 tests
+npm test          # 153 tests
 npm run geometry  # prints the geometry table, generated from the engine
 npm run sample    # renders a document at every geometry into out/
-npm run dev       # the app shell (screens not yet built)
+npm run dev       # the app
+npm run shots     # screenshots the rendered documents
+node scripts/drive.mjs   # drives the app end to end and screenshots every screen
 ```
 
 ---
