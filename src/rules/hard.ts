@@ -14,7 +14,7 @@
  */
 
 import type { DocumentBody, Section } from '../model/content'
-import { plainText } from '../model/inline'
+import { plainText, prose } from '../model/inline'
 import type { BrandKit } from '../brandkit/types'
 import { contrastHex, requiredRatio } from '../brandkit/contrast'
 import { BODY_MIN_PT, TABLE_CELL_MIN_PT } from '../geometry/constants'
@@ -106,6 +106,14 @@ export function normaliseCaps(text: string): string {
 
 /* ------------------------------------------------------------- document -- */
 
+/**
+ * The author's prose, for rules about writing.
+ *
+ * Marked runs are excluded rather than unwrapped: a UI control's name and a
+ * literal string the user types are both names the author did not choose, and
+ * a rule that reads them ends up demanding someone expand an acronym that is
+ * simply the text on a button.
+ */
 function documentText(document: DocumentBody): string[] {
   const out: string[] = [document.title]
   for (const section of document.sections) {
@@ -114,16 +122,16 @@ function documentText(document: DocumentBody): string[] {
     switch (content.shape) {
       case 'paragraph':
       case 'callout':
-        out.push(plainText(content.body))
+        out.push(prose(content.body))
         break
       case 'table':
-        out.push(...content.columns, ...content.rows.flat().map(plainText))
+        out.push(...content.columns, ...content.rows.flat().map(prose))
         break
       case 'steps':
         for (const step of content.steps) {
-          out.push(plainText(step.intent), plainText(step.action))
-          if (step.system_response) out.push(plainText(step.system_response))
-          for (const sub of step.substeps) out.push(plainText(sub.text))
+          out.push(prose(step.intent), prose(step.action))
+          if (step.system_response) out.push(prose(step.system_response))
+          for (const sub of step.substeps) out.push(prose(sub.text))
         }
         break
       case 'figure':
@@ -159,6 +167,27 @@ export function missingAltText(document: DocumentBody): HardViolation[] {
     }
   }
   return violations
+}
+
+/**
+ * Retrieval questions cannot be saved without an answer — §12.1.
+ *
+ * Feedback is what carries retrieval practice: with an answer available the
+ * effect nearly doubles (g 0.73 against 0.39). A question with no answer is
+ * the weaker intervention wearing the stronger one's clothes, so this blocks
+ * rather than warns.
+ */
+export function incompleteQuestions(document: DocumentBody): HardViolation[] {
+  return document.retrieval
+    .filter((q) => q.question.trim() && !q.answer.trim())
+    .map((q) => ({
+      rule: 'retrieval-answer',
+      where: q.id,
+      message:
+        `“${q.question.trim()}” needs its answer written out too — a question a reader ` +
+        'cannot check themselves against does most of the work and none of the good.',
+      blocksExport: true,
+    }))
 }
 
 /**
@@ -223,6 +252,7 @@ export function checkHard(
 ): HardViolation[] {
   return [
     ...missingAltText(document),
+    ...incompleteQuestions(document),
     ...contrastViolations(kit, frame),
     ...unexpandedAcronyms(document).map(
       (term): HardViolation => ({

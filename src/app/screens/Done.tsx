@@ -18,6 +18,7 @@ import type { FrameId } from '../../geometry/blueprints'
 import { renderDocument } from '../../render/html'
 import { downloadDocument, filenameFor, printDocument, FORMAT_COPY } from '../../render/pdf'
 import { assetMap, referencedAssets } from '../../screenshot/assets'
+import { renderDocx, DOCX_CAVEAT } from '../../render/docx'
 
 export function Done({
   document,
@@ -62,6 +63,27 @@ export function Done({
     }
   }, [document, kit, frameId])
 
+  // The library is large and most people never take this format, so it is
+  // loaded only when someone asks for it.
+  const [word, setWord] = useState(false)
+
+  async function getWord() {
+    setWord(true)
+    try {
+      const blob = await renderDocx(document, kit, 'scaffolded')
+      const url = URL.createObjectURL(blob)
+      const link = window.document.createElement('a')
+      link.href = url
+      link.download = filenameFor(document.title, 'editable').replace(/\.html$/, '.docx')
+      window.document.body.append(link)
+      link.click()
+      link.remove()
+      setTimeout(() => URL.revokeObjectURL(url), 0)
+    } finally {
+      setWord(false)
+    }
+  }
+
   return (
     <>
       <Screen
@@ -77,20 +99,21 @@ export function Done({
                 </p>
                 <p style={{ margin: 0, fontWeight: 500, fontSize: 15.5 }}>{format.title}</p>
                 <p className="caption" style={{ margin: 0, flex: 1 }}>
-                  {format.note}
+                  {format.id === 'word' ? DOCX_CAVEAT : format.note}
                 </p>
                 <button
                   type="button"
                   className={format.id === 'print' ? 'btn btn-accent' : 'btn'}
-                  disabled={format.id === 'word' || !files}
+                  disabled={!files || word}
                   onClick={() => {
                     if (!files) return
                     if (format.id === 'print') void printDocument(files.scaffolded, document.title)
                     if (format.id === 'web')
                       downloadDocument(files.scaffolded, filenameFor(document.title, 'full'))
+                    if (format.id === 'word') void getWord()
                   }}
                 >
-                  {format.id === 'word' ? 'Not ready yet' : files ? 'Get it' : 'Just a moment…'}
+                  {files ? (word ? 'Making it…' : 'Get it') : 'Just a moment…'}
                 </button>
               </div>
             ))}

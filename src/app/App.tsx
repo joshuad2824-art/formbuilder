@@ -115,7 +115,9 @@ export function App() {
           sections={doc.sections}
           kit={kit}
           pageCount={pages}
+          retrieval={doc.retrieval}
           onSections={store.setSections}
+          onRetrieval={(retrieval) => store.updateDocument((d) => ({ ...d, retrieval }))}
           onPicture={store.startPicture}
           onBack={back}
           onNext={next}

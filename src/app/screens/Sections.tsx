@@ -23,7 +23,8 @@ import { useState } from 'react'
 import { Field, Footer, Option, Screen } from '../chrome'
 import { COLOR } from '../theme'
 import {
-  emptyContent, insertSection, newSection, newStep, type Section, type Step,
+  emptyContent, insertSection, newSection, newQuestion, newStep,
+  type RetrievalQuestion, type Section, type Step,
 } from '../../model/content'
 import {
   CALLOUT_ANSWERS, CALLOUT_QUESTION, type CalloutLevel, type Shape,
@@ -43,7 +44,9 @@ export function Sections({
   sections,
   kit,
   pageCount,
+  retrieval,
   onSections,
+  onRetrieval,
   onPicture,
   onBack,
   onNext,
@@ -51,7 +54,9 @@ export function Sections({
   sections: Section[]
   kit: LoadedKit
   pageCount: number
+  retrieval: RetrievalQuestion[]
   onSections: (sections: Section[]) => void
+  onRetrieval: (questions: RetrievalQuestion[]) => void
   onPicture: (target: { kind: 'section'; sectionId: string } | { kind: 'step'; sectionId: string; stepId: string }) => void
   onBack: () => void
   onNext: () => void
@@ -102,6 +107,10 @@ export function Sections({
                 <AddDivider at={index + 1} adding={adding} setAdding={setAdding} onAdd={add} kit={kit} />
               </div>
             ))}
+
+            {sections.length > 0 ? (
+              <CheckYourself questions={retrieval} onChange={onRetrieval} />
+            ) : null}
           </div>
 
           {/* Reported, never set. No page-size, column or margin control. */}
@@ -143,6 +152,91 @@ export function Sections({
         </button>
       </Footer>
     </>
+  )
+}
+
+/**
+ * "Check yourself" — §12.3, on by default and removable.
+ *
+ * App-owned, and deliberately set apart from the author's own sections: they
+ * name and write those, whereas this block is the app's, and it appears in the
+ * scaffolded version only.
+ *
+ * The answer field is not optional. Retrieval practice is one of the
+ * strongly-supported findings and the feedback is what carries it — with an
+ * answer available the effect nearly doubles.
+ */
+function CheckYourself({
+  questions,
+  onChange,
+}: {
+  questions: RetrievalQuestion[]
+  onChange: (questions: RetrievalQuestion[]) => void
+}) {
+  const set = (id: string, patch: Partial<RetrievalQuestion>) =>
+    onChange(questions.map((q) => (q.id === id ? { ...q, ...patch } : q)))
+
+  return (
+    <div className="panel stack-lg" style={{ borderLeft: `2px solid ${COLOR.border}` }}>
+      <div>
+        <p className="mono" style={{ margin: 0 }}>
+          Added for you
+        </p>
+        <p style={{ margin: '10px 0 0', fontWeight: 500, fontSize: 15.5 }}>
+          A couple of questions to check yourself
+        </p>
+        <p className="caption" style={{ margin: '8px 0 0' }}>
+          They go at the end, in the full version only. Answering a question about something you
+          have just read makes it stick far better than reading it twice — which is why the answer
+          goes in as well.
+        </p>
+      </div>
+
+      {questions.map((question, index) => (
+        <div key={question.id} className="well stack">
+          <p className="mono" style={{ margin: 0 }}>
+            Question {index + 1}
+          </p>
+          <Field
+            id={`${question.id}-q`}
+            label="The question"
+            value={question.question}
+            onChange={(value) => set(question.id, { question: value })}
+            placeholder="What happens if you sign a referral on the wrong encounter?"
+          />
+          <Field
+            id={`${question.id}-a`}
+            label="The answer"
+            hint="Needed. A question a reader cannot check themselves against does most of the work and none of the good."
+            value={question.answer}
+            multiline
+            onChange={(value) => set(question.id, { answer: value })}
+          />
+          <div className="row">
+            <button
+              type="button"
+              className="btn btn-quiet"
+              onClick={() => onChange(questions.filter((q) => q.id !== question.id))}
+            >
+              Remove this question
+            </button>
+          </div>
+        </div>
+      ))}
+
+      <div className="row">
+        {questions.length < 3 ? (
+          <button type="button" className="btn" onClick={() => onChange([...questions, newQuestion()])}>
+            {questions.length === 0 ? 'Add some questions' : 'Add another'}
+          </button>
+        ) : null}
+        {questions.length > 0 ? (
+          <button type="button" className="btn btn-quiet" onClick={() => onChange([])}>
+            Leave these out
+          </button>
+        ) : null}
+      </div>
+    </div>
   )
 }
 

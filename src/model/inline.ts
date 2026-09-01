@@ -42,6 +42,22 @@ export function plainText(source: string): string {
     .join('')
 }
 
+/**
+ * The author's own prose, with marked runs removed rather than unwrapped.
+ *
+ * Anything the author marked is a name they did not invent: a control on
+ * screen, or a string typed verbatim. Rules about *writing* — expanding an
+ * acronym on first use, say — must not read those runs, or they demand an
+ * author explain what `REF` stands for when `REF` is simply what gets typed
+ * into the box.
+ */
+export function prose(source: string): string {
+  return tokenize(source)
+    .filter((t) => t.kind === 'text')
+    .map((t) => t.text)
+    .join(' ')
+}
+
 /** The huddle card gets no UI-control bolding — deltas §9.3. */
 export function uiMarksApply(blueprint: BlueprintId): boolean {
   return blueprint !== 'huddle_card'
