@@ -9,7 +9,7 @@
  * at the last step.
  */
 
-import { useMemo } from 'react'
+import { useEffect, useState } from 'react'
 import { Footer, Screen } from '../chrome'
 import { COLOR } from '../theme'
 import type { DocumentBody } from '../../model/content'
@@ -17,6 +17,7 @@ import type { LoadedKit } from '../../brandkit/types'
 import type { FrameId } from '../../geometry/blueprints'
 import { renderDocument } from '../../render/html'
 import { downloadDocument, filenameFor, printDocument, FORMAT_COPY } from '../../render/pdf'
+import { assetMap, referencedAssets } from '../../screenshot/assets'
 
 export function Done({
   document,
@@ -33,14 +34,33 @@ export function Done({
   onBack: () => void
   onRestart: () => void
 }) {
-  const files = useMemo(
-    () => ({
-      scaffolded: renderDocument(document, kit, { variant: 'scaffolded', frameId }),
-      expert: renderDocument(document, kit, { variant: 'expert', frameId }),
-      large: renderDocument(document, kit, { variant: 'scaffolded', frameId, largePrint: true }),
-    }),
-    [document, kit, frameId],
+  // Pictures live in IndexedDB, so the files are assembled asynchronously —
+  // and every image is inlined as a data URI, which is what keeps the output a
+  // single self-contained file that opens offline.
+  const [files, setFiles] = useState<{ scaffolded: string; expert: string; large: string } | null>(
+    null,
   )
+
+  useEffect(() => {
+    let live = true
+    void (async () => {
+      const assets = await assetMap(referencedAssets(document.sections), 'print')
+      if (!live) return
+      setFiles({
+        scaffolded: renderDocument(document, kit, { variant: 'scaffolded', frameId }, assets),
+        expert: renderDocument(document, kit, { variant: 'expert', frameId }, assets),
+        large: renderDocument(
+          document,
+          kit,
+          { variant: 'scaffolded', frameId, largePrint: true },
+          assets,
+        ),
+      })
+    })()
+    return () => {
+      live = false
+    }
+  }, [document, kit, frameId])
 
   return (
     <>
@@ -62,14 +82,15 @@ export function Done({
                 <button
                   type="button"
                   className={format.id === 'print' ? 'btn btn-accent' : 'btn'}
-                  disabled={format.id === 'word'}
+                  disabled={format.id === 'word' || !files}
                   onClick={() => {
+                    if (!files) return
                     if (format.id === 'print') void printDocument(files.scaffolded, document.title)
                     if (format.id === 'web')
                       downloadDocument(files.scaffolded, filenameFor(document.title, 'full'))
                   }}
                 >
-                  {format.id === 'word' ? 'Not ready yet' : 'Get it'}
+                  {format.id === 'word' ? 'Not ready yet' : files ? 'Get it' : 'Just a moment…'}
                 </button>
               </div>
             ))}
@@ -94,7 +115,10 @@ export function Done({
               <button
                 type="button"
                 className="btn"
-                onClick={() => downloadDocument(files.expert, filenameFor(document.title, 'short'))}
+                disabled={!files}
+                onClick={() =>
+                  files && downloadDocument(files.expert, filenameFor(document.title, 'short'))
+                }
               >
                 Get it
               </button>
@@ -110,8 +134,9 @@ export function Done({
               <button
                 type="button"
                 className="btn"
+                disabled={!files}
                 onClick={() =>
-                  downloadDocument(files.large, filenameFor(document.title, 'large-print'))
+                  files && downloadDocument(files.large, filenameFor(document.title, 'large-print'))
                 }
               >
                 Get it

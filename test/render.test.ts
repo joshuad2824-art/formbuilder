@@ -235,3 +235,66 @@ describe('the emitted stylesheet is well formed', () => {
     }
   })
 })
+
+describe('pictures reach the exported file', () => {
+  it('inlines the image as a data URI and carries its alt text', () => {
+    const doc = sample()
+    const steps = doc.sections.find((s) => s.shape === 'steps')!
+    if (steps.content.shape !== 'steps') throw new Error('shape')
+    steps.content.steps[0]!.screenshot = {
+      asset_id: 'a1',
+      alt: 'The Orders window, with Reconcile and Sign at the bottom right.',
+      caption: null,
+      callouts: [{ x: 0.8, y: 0.9, label: 'Reconcile and Sign' }],
+    }
+    const assets = new Map([['a1', 'data:image/png;base64,AAAA']])
+    const html = renderDocument(doc, kit, { variant: 'scaffolded', frameId: 'field_guide' }, assets)
+
+    expect(html).toContain('src="data:image/png;base64,AAAA"')
+    expect(html).toContain('alt="The Orders window, with Reconcile and Sign at the bottom right."')
+    // On the image at the anchor point — never a legend beside it.
+    expect(html).toContain('class="anno-label"')
+    expect(html).toMatch(/left:80\.00%;top:90\.00%/)
+  })
+
+  it('drops the picture in the expert cut but keeps the action', () => {
+    const doc = sample()
+    const steps = doc.sections.find((s) => s.shape === 'steps')!
+    if (steps.content.shape !== 'steps') throw new Error('shape')
+    steps.content.steps[0]!.screenshot = { asset_id: 'a1', alt: 'A window.', caption: null, callouts: [] }
+    const assets = new Map([['a1', 'data:image/png;base64,AAAA']])
+    const expert = renderDocument(doc, kit, { variant: 'expert', frameId: 'field_guide' }, assets)
+    expect(expert).not.toContain('data:image/png;base64,AAAA')
+    expect(expert).toContain('Orders')
+  })
+
+  it('omits an image whose asset is missing rather than emitting a broken one', () => {
+    const doc = sample()
+    const steps = doc.sections.find((s) => s.shape === 'steps')!
+    if (steps.content.shape !== 'steps') throw new Error('shape')
+    steps.content.steps[0]!.screenshot = { asset_id: 'gone', alt: 'A window.', caption: null, callouts: [] }
+    const html = renderDocument(doc, kit, { variant: 'scaffolded', frameId: 'field_guide' }, new Map())
+    expect(html).not.toContain('<img')
+    expect(html).not.toContain('src=""')
+  })
+})
+
+describe('referencedAssets finds every picture the document uses', () => {
+  it('collects them from steps and from figure sections alike', async () => {
+    const { referencedAssets } = await import('../src/screenshot/assets')
+    const doc = sample()
+    const steps = doc.sections.find((s) => s.shape === 'steps')!
+    if (steps.content.shape !== 'steps') throw new Error('shape')
+    steps.content.steps[0]!.screenshot = { asset_id: 'a1', alt: 'x', caption: null, callouts: [] }
+    steps.content.steps[1]!.screenshot = { asset_id: 'a2', alt: 'y', caption: null, callouts: [] }
+
+    const figure = newSection('A picture', 'figure')
+    figure.content = {
+      shape: 'figure',
+      screenshot: { asset_id: 'a3', alt: 'z', caption: null, callouts: [] },
+    }
+    doc.sections.push(figure)
+
+    expect(referencedAssets(doc.sections).sort()).toEqual(['a1', 'a2', 'a3'])
+  })
+})

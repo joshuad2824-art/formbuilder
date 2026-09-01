@@ -44,6 +44,7 @@ export function Sections({
   kit,
   pageCount,
   onSections,
+  onPicture,
   onBack,
   onNext,
 }: {
@@ -51,6 +52,7 @@ export function Sections({
   kit: LoadedKit
   pageCount: number
   onSections: (sections: Section[]) => void
+  onPicture: (target: { kind: 'section'; sectionId: string } | { kind: 'step'; sectionId: string; stepId: string }) => void
   onBack: () => void
   onNext: () => void
 }) {
@@ -94,6 +96,7 @@ export function Sections({
                   kit={kit}
                   onToggle={() => setOpen(open === section.id ? null : section.id)}
                   onChange={(change) => update(section.id, change)}
+                  onPicture={onPicture}
                   onRemove={() => onSections(sections.filter((s) => s.id !== section.id))}
                 />
                 <AddDivider at={index + 1} adding={adding} setAdding={setAdding} onAdd={add} kit={kit} />
@@ -279,6 +282,7 @@ function SectionRow({
   kit,
   onToggle,
   onChange,
+  onPicture,
   onRemove,
 }: {
   section: Section
@@ -286,6 +290,7 @@ function SectionRow({
   kit: LoadedKit
   onToggle: () => void
   onChange: (change: (section: Section) => Section) => void
+  onPicture: PictureEntry
   onRemove: () => void
 }) {
   const shapeLabel = SHAPE_COPY.find((s) => s.shape === section.shape)?.label ?? ''
@@ -314,21 +319,27 @@ function SectionRow({
       {/* Completed work collapses; the current task stays visible. */}
       {open ? (
         <div style={{ marginTop: 20 }}>
-          <SectionEditor section={section} kit={kit} onChange={onChange} />
+          <SectionEditor section={section} kit={kit} onChange={onChange} onPicture={onPicture} />
         </div>
       ) : null}
     </div>
   )
 }
 
+type PictureEntry = (
+  target: { kind: 'section'; sectionId: string } | { kind: 'step'; sectionId: string; stepId: string },
+) => void
+
 function SectionEditor({
   section,
   kit,
   onChange,
+  onPicture,
 }: {
   section: Section
   kit: LoadedKit
   onChange: (change: (section: Section) => Section) => void
+  onPicture: PictureEntry
 }) {
   const content = section.content
 
@@ -363,26 +374,167 @@ function SectionEditor({
         <StepsEditor
           steps={content.steps}
           onChange={(steps) => onChange((s) => ({ ...s, content: { ...content, steps } }))}
+          onPicture={(stepId) => onPicture({ kind: 'step', sectionId: section.id, stepId })}
         />
       )
 
     case 'table':
       return (
-        <p className="caption" style={{ margin: 0 }}>
-          Tables are written in the next pass — the section is kept and will render.
-        </p>
+        <TableEditor
+          columns={content.columns}
+          rows={content.rows}
+          onChange={(columns, rows) =>
+            onChange((s) => ({ ...s, content: { shape: 'table', columns, rows } }))
+          }
+        />
       )
 
     case 'figure':
       return (
-        <p className="caption" style={{ margin: 0 }}>
-          Pictures are added on the next screen.
-        </p>
+        <FigureEditor
+          screenshot={content.screenshot}
+          onAdd={() => onPicture({ kind: 'section', sectionId: section.id })}
+          onRemove={() => onChange((s) => ({ ...s, content: { shape: 'figure', screenshot: null } }))}
+        />
       )
   }
 }
 
-function StepsEditor({ steps, onChange }: { steps: Step[]; onChange: (steps: Step[]) => void }) {
+/**
+ * A table, edited as a table. No column-width control and no alignment control:
+ * the renderer aligns text left and numbers right, rules horizontally only, and
+ * bands at six rows or more — those are settled rules, not author choices.
+ */
+function TableEditor({
+  columns,
+  rows,
+  onChange,
+}: {
+  columns: string[]
+  rows: string[][]
+  onChange: (columns: string[], rows: string[][]) => void
+}) {
+  const setCell = (row: number, column: number, value: string) =>
+    onChange(
+      columns,
+      rows.map((r, i) => (i === row ? r.map((c, j) => (j === column ? value : c)) : r)),
+    )
+
+  const addColumn = () =>
+    onChange([...columns, ''], rows.map((r) => [...r, '']))
+
+  const removeColumn = (at: number) =>
+    onChange(
+      columns.filter((_, i) => i !== at),
+      rows.map((r) => r.filter((_, i) => i !== at)),
+    )
+
+  return (
+    <div className="stack">
+      <p className="label" style={{ margin: 0 }}>The headings</p>
+      <div className="row" style={{ alignItems: 'flex-start', flexWrap: 'wrap' }}>
+        {columns.map((column, index) => (
+          <span key={index} className="row" style={{ gap: 4 }}>
+            <input
+              className="field"
+              style={{ width: 180 }}
+              value={column}
+              aria-label={`Heading for column ${index + 1}`}
+              placeholder={index === 0 ? 'What to do' : 'Where to click'}
+              onChange={(e) =>
+                onChange(columns.map((c, i) => (i === index ? e.target.value : c)), rows)
+              }
+            />
+            {columns.length > 1 ? (
+              <button
+                type="button"
+                className="btn btn-quiet"
+                aria-label={`Remove column ${index + 1}`}
+                onClick={() => removeColumn(index)}
+              >
+                ×
+              </button>
+            ) : null}
+          </span>
+        ))}
+        <button type="button" className="btn" onClick={addColumn}>Add a column</button>
+      </div>
+
+      <p className="label" style={{ margin: '12px 0 0' }}>The rows</p>
+      <div className="stack">
+        {rows.map((row, rowIndex) => (
+          <div key={rowIndex} className="row" style={{ alignItems: 'flex-start' }}>
+            {row.map((cell, columnIndex) => (
+              <input
+                key={columnIndex}
+                className="field"
+                style={{ width: 180 }}
+                value={cell}
+                aria-label={`Row ${rowIndex + 1}, column ${columnIndex + 1}`}
+                onChange={(e) => setCell(rowIndex, columnIndex, e.target.value)}
+              />
+            ))}
+            <button
+              type="button"
+              className="btn btn-quiet"
+              aria-label={`Remove row ${rowIndex + 1}`}
+              onClick={() => onChange(columns, rows.filter((_, i) => i !== rowIndex))}
+            >
+              ×
+            </button>
+          </div>
+        ))}
+        <button
+          type="button"
+          className="btn"
+          onClick={() => onChange(columns, [...rows, columns.map(() => '')])}
+        >
+          Add a row
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function FigureEditor({
+  screenshot,
+  onAdd,
+  onRemove,
+}: {
+  screenshot: { alt: string; caption: string | null } | null
+  onAdd: () => void
+  onRemove: () => void
+}) {
+  if (!screenshot) {
+    return (
+      <button type="button" className="btn" onClick={onAdd}>
+        Add a picture
+      </button>
+    )
+  }
+  return (
+    <div className="stack">
+      <p style={{ margin: 0 }}>{screenshot.alt}</p>
+      {screenshot.caption ? (
+        <p className="caption" style={{ margin: 0 }}>{screenshot.caption}</p>
+      ) : null}
+      <div className="row">
+        <button type="button" className="btn" onClick={onAdd}>Replace it</button>
+        <button type="button" className="btn btn-quiet" onClick={onRemove}>Remove it</button>
+      </div>
+    </div>
+  )
+}
+
+function StepsEditor({
+  steps,
+  onChange,
+  onPicture,
+}: {
+  steps: Step[]
+  onChange: (steps: Step[]) => void
+  onPicture: (stepId: string) => void
+}) {
   return (
     <div className="stack-lg">
       {steps.map((step, index) => (
@@ -410,6 +562,22 @@ function StepsEditor({ steps, onChange }: { steps: Step[]; onChange: (steps: Ste
             }
           />
           <div className="row">
+            {/* A screenshot is a slot on the step, not a document-level gallery
+                — and the two never straddle a page break. */}
+            <button type="button" className="btn" onClick={() => onPicture(step.id)}>
+              {step.screenshot ? 'Replace the picture' : 'Add a picture'}
+            </button>
+            {step.screenshot ? (
+              <button
+                type="button"
+                className="btn btn-quiet"
+                onClick={() =>
+                  onChange(steps.map((s) => (s.id === step.id ? { ...s, screenshot: null } : s)))
+                }
+              >
+                Remove the picture
+              </button>
+            ) : null}
             <button
               type="button"
               className="btn btn-quiet"
@@ -418,6 +586,9 @@ function StepsEditor({ steps, onChange }: { steps: Step[]; onChange: (steps: Ste
               Remove this step
             </button>
           </div>
+          {step.screenshot ? (
+            <p className="caption" style={{ margin: 0 }}>{step.screenshot.alt}</p>
+          ) : null}
         </div>
       ))}
       <button type="button" className="btn" onClick={() => onChange([...steps, newStep()])}>
