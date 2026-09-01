@@ -303,3 +303,24 @@ describe('export formats are named by what you would do with them', () => {
     expect(filenameFor('', 'expert')).toBe('document-expert.html')
   })
 })
+
+describe('HARD: rules about writing never read what the author only named', () => {
+  // A UI control's name and a literal string typed verbatim are both names the
+  // author did not invent. A rule that reads them ends up blocking export until
+  // someone explains what the text on a button stands for.
+  it('does not flag a backticked literal as an unexpanded acronym', () => {
+    const d = doc((x) => { x.sections = [steps('Do', ['Type `REF` in the search box.'])] })
+    expect(unexpandedAcronyms(d)).toEqual([])
+    expect(blockers(checkHard(d, kit, frame('field_guide')))).toEqual([])
+  })
+
+  it('does not flag a UI target either', () => {
+    const d = doc((x) => { x.sections = [steps('Do', ['Open the [[MAR]] tab.'])] })
+    expect(unexpandedAcronyms(d)).toEqual([])
+  })
+
+  it('still flags an acronym the author wrote in their own prose', () => {
+    const d = doc((x) => { x.sections = [para('Why', 'Send it to the HIM inbox.')] })
+    expect(unexpandedAcronyms(d)).toContain('HIM')
+  })
+})

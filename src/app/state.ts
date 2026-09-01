@@ -42,11 +42,20 @@ export interface Saved {
   savedAt: string
 }
 
+/**
+ * Where a picture is headed. Adding one is a detour off the writing screen, not
+ * a step in the linear flow — so the flow remembers where to come back to.
+ */
+export type PictureTarget =
+  | { kind: 'section'; sectionId: string }
+  | { kind: 'step'; sectionId: string; stepId: string }
+
 export interface AppState {
   document: DocumentBody
   screen: ScreenId
   kit: LoadedKit
   savedAt: Date | null
+  pictureTarget: PictureTarget | null
 }
 
 function load(): Saved | null {
@@ -96,6 +105,8 @@ export interface Store {
   setSections: (sections: Section[]) => void
   updateDocument: (change: (document: DocumentBody) => DocumentBody) => void
   setKit: (kit: LoadedKit) => void
+  startPicture: (target: PictureTarget) => void
+  endPicture: () => void
   savedText: string
   /** Whether autosave is actually working, so the top bar never lies. */
   storageWorks: boolean
@@ -109,6 +120,7 @@ export function useStore(): Store {
   )
   const [screen, setScreenState] = useState<ScreenId>('brand')
   const [savedAt, setSavedAt] = useState<Date | null>(null)
+  const [pictureTarget, setPictureTarget] = useState<PictureTarget | null>(null)
   const [storageWorks, setStorageWorks] = useState(true)
   const [tick, setTick] = useState(0)
   const restored = useRef(false)
@@ -157,7 +169,7 @@ export function useStore(): Store {
   )
 
   return {
-    state: { document, screen, kit, savedAt },
+    state: { document, screen, kit, savedAt, pictureTarget },
     setScreen: setScreenState,
     setBlueprint: (blueprint) => setDocument((d) => ({ ...d, blueprint })),
     setTitle: (title) => setDocument((d) => ({ ...d, title })),
@@ -168,6 +180,14 @@ export function useStore(): Store {
       // A document picks the brand up retroactively — content is data, so
       // nothing is retyped.
       setDocument((d) => ({ ...d, brand_kit_id: next.kit.id }))
+    },
+    startPicture: (target) => {
+      setPictureTarget(target)
+      setScreenState('picture')
+    },
+    endPicture: () => {
+      setPictureTarget(null)
+      setScreenState('sections')
     },
     savedText,
     storageWorks,

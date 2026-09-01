@@ -24,14 +24,17 @@ anything on top of it.* Steps 1–3 are done.
 | 3 | HTML renderer at all geometries | done — four geometries render |
 | 4 | Screenshot pipeline | done — PHI, crop, annotate, alt text |
 | 5 | PDF export | prints from the HTML; press-side PDF/X not claimed |
-| 6 | The form UI | six screens, end to end |
+| 6 | The form UI | seven screens, end to end |
 | 7 | Rules engine — HARD first, then WARNING | done |
-| 8 | DOCX emitter | not started |
-| 9 | Huddle card, large print, retrieval blocks | card and large print done; retrieval blocks not started |
+| 8 | DOCX emitter | done — styles, not direct formatting |
+| 9 | Huddle card, large print, retrieval blocks | done |
+
+All nine steps are built. What remains is listed under **Open decisions** and
+**Known limits** below, not here.
 
 ```
 npm install
-npm test          # 153 tests
+npm test          # 177 tests
 npm run geometry  # prints the geometry table, generated from the engine
 npm run sample    # renders a document at every geometry into out/
 npm run dev       # the app
@@ -185,6 +188,22 @@ dead-end the first screen.
 - **No jargon on screen.** Not *measure*, *CPL*, *baseline unit*, *blueprint*,
   *section type*, *geometry*, or `[[double brackets]]`.
 - **No second layout engine.** PDF is the HTML, printed.
+
+---
+
+## Known limits
+
+- **PDF is the HTML, printed.** PDF/X with CMYK separations and a preflight
+  pass is a press requirement, and it happens downstream; nothing here claims
+  it.
+- **DOCX names pictures rather than placing them.** A screenshot Word resizes
+  stops being readable — §7.6's whole point — so the alt text goes in instead
+  of an image the app can no longer control.
+- **The app chrome names Archivo but does not bundle it**, falling back to a
+  system stack. Nothing is fetched, which is deliberate: the app makes no
+  external request at all.
+- **Pictures live in IndexedDB**, not in the autosaved draft. Clearing site
+  data loses them; the writing survives.
 
 ---
 

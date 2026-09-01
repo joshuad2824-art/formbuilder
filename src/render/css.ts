@@ -123,6 +123,15 @@ ${flow}
 .doc .meta dt { grid-column: 1; }
 .doc .meta dd { grid-column: 2; margin: 0; }
 
+/* The check-yourself block. The answer sits with its question rather than at
+   the back of the document: retrieval without feedback is the weaker half of
+   the effect, and a reader who has to flip pages to check will not. */
+.doc .retrieval { break-inside: avoid; page-break-inside: avoid; }
+.doc .retrieval ol { padding-left: var(--unit, 16pt); }
+.doc .retrieval li { margin-bottom: var(--half, 8pt); break-inside: avoid; }
+.doc .retrieval-q { margin: 0; font-weight: 700; }
+.doc .retrieval-a { margin: 0; color: var(--ink-muted, #4a4a4a); }
+
 /* The rule under the title is a fixed brand element, not a page-width rule. */
 .doc header .rule-brand { margin: var(--half, 8pt) 0; }
 

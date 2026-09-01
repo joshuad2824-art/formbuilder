@@ -37,6 +37,24 @@ export interface DocumentMeta {
   needs_verification: string[]
 }
 
+/**
+ * A "check yourself" question — §12.3, on by default and removable.
+ *
+ * Retrieval practice is one of the strongly-supported findings, and the
+ * feedback is what carries it: with an answer available the effect nearly
+ * doubles (g 0.73 against 0.39). So §12.1 makes it HARD that a question
+ * cannot be saved without its answer — a question with no answer is the
+ * weaker intervention wearing the stronger one's clothes.
+ *
+ * This is app-owned shell, like the title block and the change log. It is not
+ * a sixth author shape: the five shapes remain the whole vocabulary.
+ */
+export interface RetrievalQuestion {
+  id: string
+  question: string
+  answer: string
+}
+
 export interface ChangeLogEntry {
   version: string
   date: string
@@ -136,6 +154,8 @@ export interface DocumentBody {
   meta: DocumentMeta
   sections: Section[]
   change_log: ChangeLogEntry[]
+  /** Rendered in the scaffolded cut only — it is assistance, by definition. */
+  retrieval: RetrievalQuestion[]
 }
 
 export interface ContentDocument {
@@ -168,8 +188,18 @@ export function emptyDocument(blueprint: BlueprintId): ContentDocument {
       },
       sections: [],
       change_log: [],
+      retrieval: [],
     },
   }
+}
+
+export function newQuestion(): RetrievalQuestion {
+  return { id: nextId('q'), question: '', answer: '' }
+}
+
+/** A question is only saveable once it carries its answer — §12.1. */
+export function questionIsComplete(question: RetrievalQuestion): boolean {
+  return question.question.trim().length > 0 && question.answer.trim().length > 0
 }
 
 export function newSection(title: string, shape: Shape): Section {

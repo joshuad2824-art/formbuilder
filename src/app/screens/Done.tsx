@@ -9,7 +9,7 @@
  * at the last step.
  */
 
-import { useMemo } from 'react'
+import { useEffect, useState } from 'react'
 import { Footer, Screen } from '../chrome'
 import { COLOR } from '../theme'
 import type { DocumentBody } from '../../model/content'
@@ -17,6 +17,8 @@ import type { LoadedKit } from '../../brandkit/types'
 import type { FrameId } from '../../geometry/blueprints'
 import { renderDocument } from '../../render/html'
 import { downloadDocument, filenameFor, printDocument, FORMAT_COPY } from '../../render/pdf'
+import { assetMap, referencedAssets } from '../../screenshot/assets'
+import { renderDocx, DOCX_CAVEAT } from '../../render/docx'
 
 export function Done({
   document,
@@ -33,14 +35,54 @@ export function Done({
   onBack: () => void
   onRestart: () => void
 }) {
-  const files = useMemo(
-    () => ({
-      scaffolded: renderDocument(document, kit, { variant: 'scaffolded', frameId }),
-      expert: renderDocument(document, kit, { variant: 'expert', frameId }),
-      large: renderDocument(document, kit, { variant: 'scaffolded', frameId, largePrint: true }),
-    }),
-    [document, kit, frameId],
+  // Pictures live in IndexedDB, so the files are assembled asynchronously —
+  // and every image is inlined as a data URI, which is what keeps the output a
+  // single self-contained file that opens offline.
+  const [files, setFiles] = useState<{ scaffolded: string; expert: string; large: string } | null>(
+    null,
   )
+
+  useEffect(() => {
+    let live = true
+    void (async () => {
+      const assets = await assetMap(referencedAssets(document.sections), 'print')
+      if (!live) return
+      setFiles({
+        scaffolded: renderDocument(document, kit, { variant: 'scaffolded', frameId }, assets),
+        expert: renderDocument(document, kit, { variant: 'expert', frameId }, assets),
+        large: renderDocument(
+          document,
+          kit,
+          { variant: 'scaffolded', frameId, largePrint: true },
+          assets,
+        ),
+      })
+    })()
+    return () => {
+      live = false
+    }
+  }, [document, kit, frameId])
+
+  // The library is large and most people never take this format, so it is
+  // loaded only when someone asks for it.
+  const [word, setWord] = useState(false)
+
+  async function getWord() {
+    setWord(true)
+    try {
+      const blob = await renderDocx(document, kit, 'scaffolded')
+      const url = URL.createObjectURL(blob)
+      const link = window.document.createElement('a')
+      link.href = url
+      link.download = filenameFor(document.title, 'editable').replace(/\.html$/, '.docx')
+      window.document.body.append(link)
+      link.click()
+      link.remove()
+      setTimeout(() => URL.revokeObjectURL(url), 0)
+    } finally {
+      setWord(false)
+    }
+  }
 
   return (
     <>
@@ -57,19 +99,21 @@ export function Done({
                 </p>
                 <p style={{ margin: 0, fontWeight: 500, fontSize: 15.5 }}>{format.title}</p>
                 <p className="caption" style={{ margin: 0, flex: 1 }}>
-                  {format.note}
+                  {format.id === 'word' ? DOCX_CAVEAT : format.note}
                 </p>
                 <button
                   type="button"
                   className={format.id === 'print' ? 'btn btn-accent' : 'btn'}
-                  disabled={format.id === 'word'}
+                  disabled={!files || word}
                   onClick={() => {
+                    if (!files) return
                     if (format.id === 'print') void printDocument(files.scaffolded, document.title)
                     if (format.id === 'web')
                       downloadDocument(files.scaffolded, filenameFor(document.title, 'full'))
+                    if (format.id === 'word') void getWord()
                   }}
                 >
-                  {format.id === 'word' ? 'Not ready yet' : 'Get it'}
+                  {files ? (word ? 'Making it…' : 'Get it') : 'Just a moment…'}
                 </button>
               </div>
             ))}
@@ -94,7 +138,10 @@ export function Done({
               <button
                 type="button"
                 className="btn"
-                onClick={() => downloadDocument(files.expert, filenameFor(document.title, 'short'))}
+                disabled={!files}
+                onClick={() =>
+                  files && downloadDocument(files.expert, filenameFor(document.title, 'short'))
+                }
               >
                 Get it
               </button>
@@ -110,8 +157,9 @@ export function Done({
               <button
                 type="button"
                 className="btn"
+                disabled={!files}
                 onClick={() =>
-                  downloadDocument(files.large, filenameFor(document.title, 'large-print'))
+                  files && downloadDocument(files.large, filenameFor(document.title, 'large-print'))
                 }
               >
                 Get it

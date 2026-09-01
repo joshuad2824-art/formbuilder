@@ -27,7 +27,9 @@ import {
   type PixelSize,
   type ResolutionCheck,
 } from './resolution'
-import { reviewAnnotations, MAX_CALLOUTS, type AnnotationFinding, type ImagePixels } from './annotate'
+import {
+  applyFix, reviewAnnotations, MAX_CALLOUTS, type AnnotationFinding, type ImagePixels,
+} from './annotate'
 
 export type Stage = 'dropped' | 'acknowledged' | 'cropped' | 'annotated' | 'described' | 'ready'
 
@@ -88,6 +90,16 @@ export interface PipelineFinding {
   message: string
   /** Why, in the same breath as the requirement — never in a separate place. */
   because: string | null
+  /**
+   * A fix the app performs itself, where one exists.
+   *
+   * This matters most for a label that will not read where it was put. The
+   * contrast rule is HARD, but the app cannot silently relocate the label:
+   * where it sits *is* what it points at, and moving it without asking would
+   * change the author's meaning. So the app finds a spot that reads and offers
+   * to move it there, in one press.
+   */
+  fix: { label: string; apply: (draft: Draft) => Draft } | null
 }
 
 /**
@@ -111,6 +123,7 @@ export function review(
       because:
         'Someone using a screen reader gets nothing from the picture without it, and it ' +
         'is the one thing that has to be there before you can finish.',
+      fix: null,
     })
   }
 
@@ -120,6 +133,7 @@ export function review(
       blocking: true,
       message: 'Have a look at the picture for patient information before adding it.',
       because: 'Nothing here is uploaded, but the finished document gets shared.',
+      fix: null,
     })
   }
 
@@ -133,6 +147,10 @@ export function review(
         blocking: false,
         message: 'This caption says much the same as the step above it.',
         because: 'A caption that repeats the step gets read twice and adds nothing the second time.',
+        fix: {
+          label: 'Drop the caption',
+          apply: (d) => setCaption(d, null),
+        },
       })
     }
   }
@@ -145,23 +163,36 @@ export function review(
         'This is cropped in very close. Leaving a little of the surrounding screen helps ' +
         'the reader find the same place on their own.',
       because: null,
+      fix: null,
     })
   }
 
   const resolution = checkResolution(draft.size, draft.crop, options.frame)
   if (!resolution.ok && resolution.message) {
-    findings.push({ kind: 'resolution', blocking: false, message: resolution.message, because: null })
+    findings.push({
+      kind: 'resolution',
+      blocking: false,
+      message: resolution.message,
+      because: null,
+      fix: null,
+    })
   }
 
   if (options.pixels) {
     for (const finding of reviewAnnotations(options.pixels, draft.callouts, options.kit)) {
       findings.push({
         kind: 'annotation',
-        // Contrast against the sampled pixels is HARD — the renderer enforces
-        // it rather than offering it, so it is surfaced here as blocking.
+        // Contrast against the sampled pixels is HARD: a label nobody can read
+        // is not a label. It blocks, but it blocks with a way out.
         blocking: finding.kind === 'contrast',
         message: finding.message,
         because: null,
+        fix: finding.fix
+          ? {
+              label: 'Move it somewhere clearer',
+              apply: (d) => ({ ...d, callouts: applyFix(d.callouts, finding) }),
+            }
+          : null,
       })
     }
   }

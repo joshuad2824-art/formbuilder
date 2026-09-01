@@ -205,3 +205,54 @@ describe('tokenOverlap', () => {
     expect(tokenOverlap('The banner sits above', 'Select the Orders tab')).toBeLessThan(0.3)
   })
 })
+
+describe('a blocker with a way out', () => {
+  const image = twoTone()
+
+  it('offers to move a label that will not read where it was put', () => {
+    // The contrast rule is HARD, but the app cannot silently relocate a label:
+    // where it sits is what it points at. So it finds a spot that reads and
+    // offers the move in one press.
+    let draft = setAlt(confirmPhi(startDraft('data:,x', { width: 2000, height: 1200 })), 'The Save button.')
+    // Just inside the dark half, so a small nudge reaches somewhere readable.
+    draft = addCallout(draft, { x: 0.56, y: 0.5, label: 'Save' })
+    const findings = review(draft, { frame: frame('field_guide'), kit, pixels: image })
+    const contrast = findings.find((f) => f.kind === 'annotation')!
+    expect(contrast.blocking).toBe(true)
+    expect(contrast.fix).not.toBeNull()
+
+    const moved = contrast.fix!.apply(draft)
+    expect(moved.callouts[0]!.x).not.toBe(0.56)
+    // And applying it clears the block.
+    expect(
+      review(moved, { frame: frame('field_guide'), kit, pixels: image }).some((f) => f.blocking),
+    ).toBe(false)
+  })
+
+  it('offers no fix when nothing nearby would read either, and says so honestly', () => {
+    // Deep in the dark half, every candidate position fails too. Inventing a
+    // move here would just relocate the problem and lose what the label points
+    // at — so the author is told, and moves it themselves.
+    let draft = setAlt(confirmPhi(startDraft('data:,x', { width: 2000, height: 1200 })), 'The Save button.')
+    draft = addCallout(draft, { x: 0.9, y: 0.5, label: 'Save' })
+    const finding = review(draft, { frame: frame('field_guide'), kit, pixels: image }).find(
+      (f) => f.kind === 'annotation',
+    )!
+    expect(finding.blocking).toBe(true)
+    expect(finding.fix).toBeNull()
+    expect(finding.message).not.toMatch(/can be moved/)
+  })
+
+  it('offers to drop a caption that repeats the step', () => {
+    let draft = setAlt(confirmPhi(startDraft('data:,x', { width: 2000, height: 1200 })), 'The tab.')
+    draft = setCaption(draft, 'Select the Orders tab from the Menu')
+    const findings = review(draft, {
+      frame: frame('field_guide'),
+      kit,
+      stepText: 'Select the [[Orders]] tab from the Menu.',
+    })
+    const caption = findings.find((f) => f.kind === 'caption')!
+    expect(caption.blocking).toBe(false)
+    expect(caption.fix!.apply(draft).caption).toBeNull()
+  })
+})

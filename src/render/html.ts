@@ -155,6 +155,31 @@ function renderSection(
   }
 }
 
+/**
+ * The "check yourself" block — §12.3.
+ *
+ * Scaffolded cut only. It is assistance by definition, and the expertise
+ * reversal finding says assistance an expert did not need is not neutral for
+ * them. The answers print with the questions: retrieval without feedback is
+ * the weaker half of the effect.
+ */
+function renderRetrieval(document: DocumentBody, variant: Variant, uiMarks: boolean): string {
+  if (variant !== 'scaffolded') return ''
+  const ready = document.retrieval.filter((q) => q.question.trim() && q.answer.trim())
+  if (ready.length === 0) return ''
+  return (
+    `<section class="retrieval"><h2>Check yourself</h2><ol>` +
+    ready
+      .map(
+        (q) =>
+          `<li><p class="retrieval-q">${inline(q.question, uiMarks)}</p>` +
+          `<p class="retrieval-a">${inline(q.answer, uiMarks)}</p></li>`,
+      )
+      .join('') +
+    `</ol></section>`
+  )
+}
+
 /** The document shell is app-owned and is not an author section — deltas §9.2. */
 function renderShell(
   document: DocumentBody,
@@ -223,6 +248,7 @@ export function renderDocument(
     })
     .join('\n')
 
+  const retrieval = renderRetrieval(document, options.variant, uiMarks)
   const title = escapeHtml(document.title || 'Untitled')
 
   // The kit styles documents through this contract: the blueprint on the root,
@@ -247,9 +273,9 @@ export function renderDocument(
   // rail cannot hold one without crushing its headers.
   const flow =
     options.frameId === 'letter_prose'
-      ? `<div class="body-grid"><div class="flow">${sections}${changeLog}</div>` +
+      ? `<div class="body-grid"><div class="flow">${sections}${retrieval}${changeLog}</div>` +
         `<aside class="rail">${footer}</aside></div>`
-      : `<div class="flow">${sections}</div>${changeLog}${footer}`
+      : `<div class="flow">${sections}${retrieval}</div>${changeLog}${footer}`
 
   const spine = document.blueprint === 'huddle_card' ? ' spine' : ''
 
